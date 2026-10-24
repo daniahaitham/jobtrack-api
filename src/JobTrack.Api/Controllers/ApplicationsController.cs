@@ -22,15 +22,31 @@ public class ApplicationsController : ControllerBase
 
     // The user id comes from the token, never from the request body, so nobody can act as someone else.
     private int CurrentUserId => int.Parse(User.FindFirst("uid")!.Value);
-
-    /// <summary>List all my applications, newest first.</summary>
+ 
+    /// <summary>
+    /// List my applications, newest first.
+    /// Optional: ?status=Interview  and/or  ?search=acme
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<ApplicationResponse>>> GetAll()
+    public async Task<ActionResult<List<ApplicationResponse>>> GetAll(ApplicationStatus? status, string? search)
     {
-        var items = await _db.Applications
-            .Where(a => a.UserId == CurrentUserId)
-            .OrderByDescending(a => a.AppliedOn)
-            .ToListAsync();
+        // Start with only MY applications.
+        var query = _db.Applications.Where(a => a.UserId == CurrentUserId);
+
+        // Optional filter by status.
+        if (status.HasValue)
+        {
+            query = query.Where(a => a.Status == status.Value);
+        }
+
+        // Optional search in company and role.
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var text = search.Trim().ToLower();
+            query = query.Where(a => a.Company.ToLower().Contains(text) || a.Role.ToLower().Contains(text));
+        }
+
+        var items = await query.OrderByDescending(a => a.AppliedOn).ToListAsync();
 
         return Ok(items.Select(ToResponse).ToList());
     }
