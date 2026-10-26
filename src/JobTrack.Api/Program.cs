@@ -85,6 +85,15 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+
+// ---- CORS: allow the React app (running on port 5173) to call this API ----
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 var app = builder.Build();
 
 // Create the database file + tables on first run. (Proper migrations come in part 2.)
@@ -92,6 +101,8 @@ using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
 }
+
+app.UseCors("Frontend");
 
 app.UseSwagger();
 app.UseSwaggerUI();
