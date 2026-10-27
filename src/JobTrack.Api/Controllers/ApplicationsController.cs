@@ -22,7 +22,7 @@ public class ApplicationsController : ControllerBase
 
     // The user id comes from the token, never from the request body, so nobody can act as someone else.
     private int CurrentUserId => int.Parse(User.FindFirst("uid")!.Value);
- 
+
     /// <summary>
     /// List my applications, newest first.
     /// Optional: ?status=Interview  and/or  ?search=acme
@@ -71,8 +71,8 @@ public class ApplicationsController : ControllerBase
             Role = request.Role.Trim(),
             Link = request.Link,
             Status = request.Status,
-            AppliedOn = request.AppliedOn ?? now,
-            FollowUpOn = request.FollowUpOn,
+            AppliedOn = AsUtc(request.AppliedOn) ?? now,
+            FollowUpOn = AsUtc(request.FollowUpOn),
             Notes = request.Notes,
             CreatedAt = now,
             UpdatedAt = now
@@ -98,8 +98,8 @@ public class ApplicationsController : ControllerBase
         item.Role = request.Role.Trim();
         item.Link = request.Link;
         item.Status = request.Status;
-        item.AppliedOn = request.AppliedOn ?? item.AppliedOn;
-        item.FollowUpOn = request.FollowUpOn;
+        item.AppliedOn = AsUtc(request.AppliedOn) ?? item.AppliedOn;
+        item.FollowUpOn = AsUtc(request.FollowUpOn);
         item.Notes = request.Notes;
         item.UpdatedAt = DateTime.UtcNow;
 
@@ -121,6 +121,10 @@ public class ApplicationsController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    // PostgreSQL only accepts dates marked as UTC, so we mark every incoming date that way.
+    private static DateTime? AsUtc(DateTime? date) =>
+        date.HasValue ? DateTime.SpecifyKind(date.Value, DateTimeKind.Utc) : null;
 
     private static ApplicationResponse ToResponse(JobApplication a) =>
         new(a.Id, a.Company, a.Role, a.Link, a.Status, a.AppliedOn, a.FollowUpOn, a.Notes, a.CreatedAt, a.UpdatedAt);

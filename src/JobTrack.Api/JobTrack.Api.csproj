@@ -9,8 +9,9 @@
   <ItemGroup>
     <!-- Login with JWT tokens -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <!-- Database access (SQLite file for now, PostgreSQL later) -->
+    <!-- Database access: a SQLite file on your laptop, PostgreSQL (Neon) online -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
     <!-- Swagger: a web page to try the API -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.*" />
   </ItemGroup>

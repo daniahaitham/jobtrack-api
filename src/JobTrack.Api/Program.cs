@@ -10,9 +10,21 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Database -------------------------------------------------------------
-// The connection string is read lazily so tests can swap in a different database file.
+// Locally we use a SQLite file. Online (Neon) the connection string starts with "postgres",
+// so we switch to PostgreSQL. The string is read lazily so tests can swap in their own database.
 builder.Services.AddDbContext<AppDbContext>((sp, options) =>
-    options.UseSqlite(sp.GetRequiredService<IConfiguration>().GetConnectionString("Default")));
+{
+    var connection = sp.GetRequiredService<IConfiguration>().GetConnectionString("Default") ?? "";
+
+    if (connection.StartsWith("postgres"))
+    {
+        options.UseNpgsql(ConvertNeonUrl(connection));
+    }
+    else
+    {
+        options.UseSqlite(connection);
+    }
+});
 
 // ---- JWT settings ---------------------------------------------------------
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
@@ -85,15 +97,20 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// ---- CORS: say which websites may call this API -----------------------------
+// Locally that is the React dev server. Online, set the variable Cors__Origins to your Vercel address
+// (several addresses can be separated by commas).
+var origins = (builder.Configuration["Cors:Origins"] ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-// ---- CORS: allow the React app (running on port 5173) to call this API ----
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins(origins)
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
 var app = builder.Build();
 
 // Create the database file + tables on first run. (Proper migrations come in part 2.)
@@ -102,10 +119,10 @@ using (var scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.EnsureCreated();
 }
 
-app.UseCors("Frontend");
-
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseCors("Frontend"); // must come before authentication
 
 app.UseAuthentication(); // 1) who are you?
 app.UseAuthorization();  // 2) are you allowed?
@@ -113,6 +130,19 @@ app.UseAuthorization();  // 2) are you allowed?
 app.MapControllers();
 
 app.Run();
+
+// Neon gives us a link like postgresql://user:password@host/dbname?sslmode=require.
+// The PostgreSQL driver wants "Host=...;Database=...;Username=...;Password=..." instead, so we convert it.
+static string ConvertNeonUrl(string url)
+{
+    var uri = new Uri(url);
+    var login = uri.UserInfo.Split(':', 2);
+    var port = uri.Port > 0 ? uri.Port : 5432;
+
+    return $"Host={uri.Host};Port={port};Database={uri.AbsolutePath.TrimStart('/')};" +
+           $"Username={Uri.UnescapeDataString(login[0])};Password={Uri.UnescapeDataString(login[1])};" +
+           "SSL Mode=Require;Timeout=30";
+}
 
 // Lets the test project start the whole app in memory.
 public partial class Program
