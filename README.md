@@ -4,7 +4,15 @@ A REST API for tracking job applications. Users sign up, log in, and manage thei
 
 Built with **ASP.NET Core (.NET 10)**, **Entity Framework Core**, **JWT authentication**, and **xUnit** integration tests.
 
-> Status: **Part 1 (core API)** is done. See the [roadmap](#roadmap) for what's next. A React front end (`jobtrack-web`) will use this API.
+## Live demo
+
+- **App:** https://jobtrack-web-gamma.vercel.app
+- **API docs (Swagger):** https://jobtrack-api-cmqo.onrender.com/swagger
+- **Front end repo:** https://github.com/daniahaitham/jobtrack-web
+
+> The API runs on a free plan and sleeps when nobody uses it, so the **first load can take about a minute**. After that it's fast.
+
+Hosted on Render (API, in Docker), Neon (PostgreSQL) and Vercel (React).
 
 ## Features
 
