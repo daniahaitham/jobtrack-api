@@ -29,7 +29,7 @@ Hosted on Render (API, in Docker), Neon (PostgreSQL) and Vercel (React).
 | Part | Choice |
 |---|---|
 | Framework | ASP.NET Core Web API (controllers), .NET 10 |
-| Database | SQLite via Entity Framework Core (PostgreSQL planned) |
+| Database | PostgreSQL (Neon) online, SQLite locally, via Entity Framework Core  |
 | Auth | JWT bearer tokens |
 | Docs | Swagger / OpenAPI (Swashbuckle) |
 | Tests | xUnit + `WebApplicationFactory` |
