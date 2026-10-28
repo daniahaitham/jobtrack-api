@@ -14,6 +14,10 @@ Built with **ASP.NET Core (.NET 10)**, **Entity Framework Core**, **JWT authenti
 
 Hosted on Render (API, in Docker), Neon (PostgreSQL) and Vercel (React).
 
+## API docs
+
+![Swagger UI](docs/swagger.png)
+
 ## Features
 
 - Register and log in (passwords are hashed with PBKDF2, never stored in plain text)
